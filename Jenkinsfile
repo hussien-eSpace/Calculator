@@ -1,5 +1,33 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml '''
+                apiVersion: v1
+                kind: Pod
+                spec:
+                  containers:
+                  - name: maven
+                    image: maven:3.8.4-openjdk-11
+                    command:
+                    - sleep
+                    args:
+                    - infinity
+                  - name: docker
+                    image: docker:19.03
+                    command:
+                    - sleep
+                    args:
+                    - infinity
+                    volumeMounts:
+                    - name: docker-sock
+                      mountPath: /var/run/docker.sock
+                  volumes:
+                  - name: docker-sock
+                    hostPath:
+                      path: /var/run/docker.sock
+            '''
+        }
+    }
     
     environment {
         DOCKER_IMAGE = 'calculator'
@@ -15,18 +43,18 @@ pipeline {
         
         stage('Build & Test') {
             steps {
-                sh 'mvn clean package'
+                container('maven') {
+                    sh 'mvn clean package'
+                }
             }
         }
         
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
+                container('docker') {
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
                 }
             }
         }
-        
     }
-    
 }
