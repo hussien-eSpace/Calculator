@@ -1,50 +1,51 @@
 pipeline {
     options {
-        timeout(time: 20, unit: 'MINUTES')  // Timeout for the entire pipeline
-        retry(2)  // Retry the entire pipeline twice if it fails
+        timeout(time: 20, unit: 'MINUTES')
+        retry(2)
     }
     agent {
         kubernetes {
             yaml '''
-                apiVersion: v1
-                kind: Pod
-                spec:
-                  containers:
-                  - name: docker
-                    image: docker:19.03
-                    command:
-                    - sleep
-                    args:
-                    - infinity
-                    volumeMounts:
-                    - name: docker-sock
-                      mountPath: /var/run/docker.sock
-                  - name: kubectl
-                    image: bitnami/kubectl:latest
-                    command:
-                    - sleep
-                    args:
-                    - infinity
-                    volumeMounts:
-                    - name: kubeconfig
-                      mountPath: /root/.kube/
-                      readOnly: true
-                  volumes:
-                  - name: docker-sock
-                    hostPath:
-                      path: /var/run/docker.sock
-                  - name: kubeconfig
-                    secret:
-                      secretName: minikube-kubeconfig
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:4.11.2-4
+  - name: docker
+    image: docker:19.03
+    command:
+    - sleep
+    args:
+    - infinity
+    volumeMounts:
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - sleep
+    args:
+    - infinity
+    volumeMounts:
+    - name: kubeconfig
+      mountPath: /root/.kube/
+      readOnly: true
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+  - name: kubeconfig
+    secret:
+      secretName: minikube-kubeconfig
             '''
         }
     }
     
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-        DOCKER_IMAGE = 'hussienmohamed/calculator'  // Replace with your DockerHub username
+        DOCKER_IMAGE = 'hussienmohamed/calculator'
         DOCKER_TAG = "${BUILD_NUMBER}"
-        KUBECONFIG = credentials('minikube-config')  // We'll create this credential in Jenkins
     }
     
     stages {
@@ -80,23 +81,12 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {  // Timeout for deployment
+                timeout(time: 5, unit: 'MINUTES') {
                     container('kubectl') {
-                        // Copy kubeconfig to the expected location
                         sh """
-                            mkdir -p /root/.kube
-                            echo "$KUBECONFIG" > /root/.kube/config
-                            chmod 600 /root/.kube/config
-                            
-                            # Verify connection
-                            kubectl cluster-info
-                            
-                            # Deploy the application
                             sed -i 's/\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml
                             kubectl apply -f k8s/deployment.yaml
                             kubectl apply -f k8s/service.yaml
-                            
-                            # Wait for deployment
                             kubectl rollout status deployment/calculator-app
                         """
                     }
