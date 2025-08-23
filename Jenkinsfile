@@ -20,7 +20,7 @@ spec:
     - name: docker-sock
       mountPath: /var/run/docker.sock
   - name: kubectl
-    image: bitnami/kubectl:latest
+    image: alpine/k8s:1.24.16
     command:
     - sleep
     args:
@@ -79,14 +79,17 @@ spec:
 
         stage('Deploy to Kubernetes') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    container('kubectl') {
-                        sh """
-                            sed -i 's/\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml
-                            kubectl apply -f k8s/deployment.yaml
-                            kubectl apply -f k8s/service.yaml
-                            kubectl rollout status deployment/calculator-app
-                        """
+                container('kubectl') {
+                    script {
+                        // Update the deployment with the new image
+                        sh "kubectl set image deployment/calculator-app calculator=hussienmohamed/calculator:${BUILD_NUMBER} || true"
+                        
+                        // Apply the manifests
+                        sh "kubectl apply -f k8s/deployment.yaml"
+                        sh "kubectl apply -f k8s/service.yaml"
+                        
+                        // Wait for deployment
+                        sh "kubectl rollout status deployment/calculator-app --timeout=300s"
                     }
                 }
             }
