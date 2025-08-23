@@ -4,7 +4,6 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'calculator'
         DOCKER_TAG = "${BUILD_NUMBER}"
-        KUBECONFIG = credentials('kubeconfig')
     }
     
     stages {
@@ -28,23 +27,6 @@ pipeline {
             }
         }
         
-        stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    // Apply Kubernetes manifests
-                    sh '''
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
-                    '''
-                }
-            }
-        }
     }
     
-    post {
-        always {
-            // Clean up workspace
-            cleanWs()
-        }
-    }
 }
