@@ -10,8 +10,6 @@ apiVersion: v1
 kind: Pod
 spec:
   containers:
-  - name: jnlp
-    image: jenkins/inbound-agent:4.11.2-4
   - name: docker
     image: docker:19.03
     command:
