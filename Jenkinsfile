@@ -30,7 +30,8 @@ pipeline {
     }
     
     environment {
-        DOCKER_IMAGE = 'calculator'
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
+        DOCKER_IMAGE = 'hussienmohamed/calculator'  // Replace with your DockerHub username
         DOCKER_TAG = "${BUILD_NUMBER}"
     }
     
@@ -53,6 +54,22 @@ pipeline {
             steps {
                 container('docker') {
                     sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                }
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                container('docker') {
+                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                }
+            }
+            post {
+                always {
+                    container('docker') {
+                        sh 'docker logout'
+                    }
                 }
             }
         }
