@@ -60,7 +60,6 @@ pipeline {
             }
         }
         
-        
         stage('Build Docker Image') {
             steps {
                 container('docker') {
@@ -88,24 +87,25 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {  // Timeout for deployment
-                container('kubectl') {
-                    // Copy kubeconfig to the expected location
-                    sh """
-                        mkdir -p /root/.kube
-                        echo "$KUBECONFIG" > /root/.kube/config
-                        chmod 600 /root/.kube/config
-                        
-                        # Verify connection
-                        kubectl cluster-info
-                        
-                        # Deploy the application
-                        sed -i 's/\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
-                        
-                        # Wait for deployment
-                        kubectl rollout status deployment/calculator-app
-                    """
+                    container('kubectl') {
+                        // Copy kubeconfig to the expected location
+                        sh """
+                            mkdir -p /root/.kube
+                            echo "$KUBECONFIG" > /root/.kube/config
+                            chmod 600 /root/.kube/config
+                            
+                            # Verify connection
+                            kubectl cluster-info
+                            
+                            # Deploy the application
+                            sed -i 's/\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml
+                            kubectl apply -f k8s/deployment.yaml
+                            kubectl apply -f k8s/service.yaml
+                            
+                            # Wait for deployment
+                            kubectl rollout status deployment/calculator-app
+                        """
+                    }
                 }
             }
         }
