@@ -10,12 +10,6 @@ pipeline {
                 kind: Pod
                 spec:
                   containers:
-                  - name: maven
-                    image: maven:3.8.4-openjdk-11
-                    command:
-                    - sleep
-                    args:
-                    - infinity
                   - name: docker
                     image: docker:19.03
                     command:
