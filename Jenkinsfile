@@ -21,6 +21,12 @@ pipeline {
                     volumeMounts:
                     - name: docker-sock
                       mountPath: /var/run/docker.sock
+                  - name: kubectl
+                    image: bitnami/kubectl:latest
+                    command:
+                    - sleep
+                    args:
+                    - infinity
                   volumes:
                   - name: docker-sock
                     hostPath:
@@ -42,13 +48,6 @@ pipeline {
             }
         }
         
-        stage('Build & Test') {
-            steps {
-                container('maven') {
-                    sh 'mvn clean package'
-                }
-            }
-        }
         
         stage('Build Docker Image') {
             steps {
@@ -70,6 +69,19 @@ pipeline {
                     container('docker') {
                         sh 'docker logout'
                     }
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                container('kubectl') {
+                    // Replace the BUILD_NUMBER placeholder in deployment.yaml
+                    sh """
+                        sed -i 's/\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                    """
                 }
             }
         }
