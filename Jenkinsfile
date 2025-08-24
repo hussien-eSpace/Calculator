@@ -82,7 +82,7 @@ spec:
                 container('kubectl') {
                     script {
                         // Replace BUILD_NUMBER placeholder in deployment.yaml
-                        sh "sed -i 's/\\\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml"
+                        sh "sed -i 's/\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml"
                         
                         // Apply the manifests
                         sh "kubectl apply -f k8s/deployment.yaml"
