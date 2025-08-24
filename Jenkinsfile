@@ -81,8 +81,8 @@ spec:
             steps {
                 container('kubectl') {
                     script {
-                        // Update the deployment with the new image
-                        sh "kubectl set image deployment/calculator-app calculator=hussienmohamed/calculator:${BUILD_NUMBER} || true"
+                        // Replace BUILD_NUMBER placeholder in deployment.yaml
+                        sh "sed -i 's/\\\${BUILD_NUMBER}/${BUILD_NUMBER}/g' k8s/deployment.yaml"
                         
                         // Apply the manifests
                         sh "kubectl apply -f k8s/deployment.yaml"
